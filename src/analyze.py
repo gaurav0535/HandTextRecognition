@@ -9,6 +9,7 @@ import numpy as np
 import cv2
 import matplotlib.pyplot as plt
 from src.DataLoader import Batch
+
 from src.SamplePreprocessor import preprocess
 
 # Define constants like file paths
@@ -32,5 +33,7 @@ def weightOfEvidence(origProb,margProb):
 def analyzePixelRelevance():
     "simplified implementation of paper: Zintgraf et al - Visualizing Deep Neural Network Decisions: Prediction Difference"
 
-    #setup model
-    pass
+    # setup model
+   # model = Model(open(Constants.fnCharList).read(), DecoderType.BestPath, mustRestore=True)
+
+
