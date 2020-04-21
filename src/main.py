@@ -5,9 +5,9 @@ import sys
 import argparse
 import cv2
 import editdistance
-from src.DataLoader import DataLoader, Batch
-from src.Model import Model, DecoderType
-from src.SamplePreprocessor import preprocess
+from DataLoader import DataLoader, Batch
+from Model import Model, DecoderType
+from SamplePreprocessor import preprocess
 
 
 class FilePaths:
@@ -58,7 +58,8 @@ def train(model, loader):
             print('No more improvement since %d epochs. Training stopped.' % earlyStopping)
             break
 
-def validate(model ,loader):
+
+def validate(model, loader):
     "validate NN"
     print('Validate NN')
     loader.validationSet()
@@ -67,35 +68,35 @@ def validate(model ,loader):
     numWordOK = 0
     numWordTotal = 0
     while loader.hasNext():
-        interInfo =loader.getIteratorInfo()
-        print('Batch:',interInfo[0],'/',interInfo[1])
+        iterInfo = loader.getIteratorInfo()
+        print('Batch:', iterInfo[0], '/', iterInfo[1])
         batch = loader.getNext()
         (recognized, _) = model.inferBatch(batch)
 
-        print('Ground truth --> Recognized')
+        print('Ground truth -> Recognized')
         for i in range(len(recognized)):
-            numWordOK += 1 if batch.getTexts[i] == recognized[i] else 0
+            numWordOK += 1 if batch.gtTexts[i] == recognized[i] else 0
             numWordTotal += 1
-
-            dist = editdistance.eval(recognized[i],batch.getTexts[i])
+            dist = editdistance.eval(recognized[i], batch.gtTexts[i])
             numCharErr += dist
-            numCharTotal += len(batch.getTexts[i])
+            numCharTotal += len(batch.gtTexts[i])
             print('[OK]' if dist == 0 else '[ERR:%d]' % dist, '"' + batch.gtTexts[i] + '"', '->',
                   '"' + recognized[i] + '"')
 
-    # print validation results
+    # print validation result
     charErrorRate = numCharErr / numCharTotal
     wordAccuracy = numWordOK / numWordTotal
     print('Character error rate: %f%%. Word accuracy: %f%%.' % (charErrorRate * 100.0, wordAccuracy * 100.0))
     return charErrorRate
 
+
 def infer(model, fnImg):
-	"recognize text in image provided by file path"
-	img = preprocess(cv2.imread(fnImg, cv2.IMREAD_GRAYSCALE), Model.imgSize)
-	batch = Batch(None, [img])
-	(recognized, probability) = model.inferBatch(batch, True)
-	print('Recognized:', '"' + recognized[0] + '"')
-	print('Probability:', probability[0])
+    "recognize text in image provided by file path"
+    img = preprocess(cv2.imread(fnImg, cv2.IMREAD_GRAYSCALE), Model.imgSize)
+    batch = Batch(None, [img])
+    (recognized, probability) = model.inferBatch(batch, True)
+    print('Recognized:', '"' + recognized[0] + '"')
+    print('Probability:', probability[0])
 
 
 def main():
@@ -145,5 +146,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-

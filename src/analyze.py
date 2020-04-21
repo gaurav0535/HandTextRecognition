@@ -8,9 +8,9 @@ import copy
 import numpy as np
 import cv2
 import matplotlib.pyplot as plt
-from src.DataLoader import Batch
-from src.Model import Model, DecoderType
-from src.SamplePreprocessor import preprocess
+from DataLoader import Batch
+from Model import Model, DecoderType
+from SamplePreprocessor import preprocess
 
 
 # constants like filepaths
@@ -86,69 +86,74 @@ def analyzePixelRelevance():
 
     np.save(Constants.fnPixelRelevance, pixelRelevance)
 
-    def analyzeTranslationInvariance():
-        # setup model
-        model = Model(open(Constants.fnCharList).read(), DecoderType.BestPath, mustRestore=True)
 
-        # read image and specify ground-truth text
-        img = cv2.imread(Constants.fnAnalyze, cv2.IMREAD_GRAYSCALE)
-        (w, h) = img.shape
-        assert Model.imgSize[1] == w
+def analyzeTranslationInvariance():
+    # setup model
+    model = Model(open(Constants.fnCharList).read(), DecoderType.BestPath, mustRestore=True)
 
-        imgList = []
-        for dy in range(Model.imgSize[0] - h + 1):
-            targetImg = np.ones((Model.imgSize[1], Model.imgSize[0])) * 255
-            targetImg[:, dy:h + dy] = img
-            imgList.append(preprocess(targetImg, Model.imgSize))
+    # read image and specify ground-truth text
+    img = cv2.imread(Constants.fnAnalyze, cv2.IMREAD_GRAYSCALE)
+    (w, h) = img.shape
+    assert Model.imgSize[1] == w
 
-        # put images and gt texts into batch
-        batch = Batch([Constants.gtText] * len(imgList), imgList)
+    imgList = []
+    for dy in range(Model.imgSize[0] - h + 1):
+        targetImg = np.ones((Model.imgSize[1], Model.imgSize[0])) * 255
+        targetImg[:, dy:h + dy] = img
+        imgList.append(preprocess(targetImg, Model.imgSize))
 
-        # compute probabilities
-        (texts, probs) = model.inferBatch(batch, calcProbability=True, probabilityOfGT=True)
+    # put images and gt texts into batch
+    batch = Batch([Constants.gtText] * len(imgList), imgList)
 
-        # save results to file
-        f = open(Constants.fnTranslationInvarianceTexts, 'wb')
-        pickle.dump(texts, f)
-        f.close()
-        np.save(Constants.fnTranslationInvariance, probs)
+    # compute probabilities
+    (texts, probs) = model.inferBatch(batch, calcProbability=True, probabilityOfGT=True)
 
-    def showResults():
-        # 1. pixel relevance
-        pixelRelevance = np.load(Constants.fnPixelRelevance)
-        plt.figure('Pixel relevance')
+    # save results to file
+    f = open(Constants.fnTranslationInvarianceTexts, 'wb')
+    pickle.dump(texts, f)
+    f.close()
+    np.save(Constants.fnTranslationInvariance, probs)
 
-        plt.imshow(pixelRelevance, cmap=plt.cm.jet, vmin=-0.25, vmax=0.25)
-        plt.colorbar()
 
-        img = cv2.imread(Constants.fnAnalyze, cv2.IMREAD_GRAYSCALE)
-        plt.imshow(img, cmap=plt.cm.gray, alpha=.4)
+def showResults():
+    # 1. pixel relevance
+    pixelRelevance = np.load(Constants.fnPixelRelevance)
+    plt.figure('Pixel relevance')
 
-        # 2. translation invariance
-        probs = np.load(Constants.fnTranslationInvariance)
-        f = open(Constants.fnTranslationInvarianceTexts, 'rb')
-        texts = pickle.load(f)
-        texts = ['%d:' % i + texts[i] for i in range(len(texts))]
-        f.close()
+    plt.imshow(pixelRelevance, cmap=plt.cm.jet, vmin=-0.25, vmax=0.25)
+    plt.colorbar()
 
-        plt.figure('Translation invariance')
+    img = cv2.imread(Constants.fnAnalyze, cv2.IMREAD_GRAYSCALE)
+    plt.imshow(img, cmap=plt.cm.gray, alpha=.4)
 
-        plt.plot(probs, 'o-')
-        plt.xticks(np.arange(len(texts)), texts, rotation='vertical')
-        plt.xlabel('horizontal translation and best path')
-        plt.ylabel('text probability of "%s"' % Constants.gtText)
+    # 2. translation invariance
+    probs = np.load(Constants.fnTranslationInvariance)
+    f = open(Constants.fnTranslationInvarianceTexts, 'rb')
+    texts = pickle.load(f)
+    texts = ['%d:' % i + texts[i] for i in range(len(texts))]
+    f.close()
 
-        # show both plots
-        plt.show()
+    plt.figure('Translation invariance')
 
-    if __name__ == '__main__':
-        if len(sys.argv) > 1:
-            if sys.argv[1] == '--relevance':
-                print('Analyze pixel relevance')
-                analyzePixelRelevance()
-            elif sys.argv[1] == '--invariance':
-                print('Analyze translation invariance')
-                analyzeTranslationInvariance()
-        else:
-            print('Show results')
-            showResults()
+    plt.plot(probs, 'o-')
+    plt.xticks(np.arange(len(texts)), texts, rotation='vertical')
+    plt.xlabel('horizontal translation and best path')
+    plt.ylabel('text probability of "%s"' % Constants.gtText)
+
+    # show both plots
+    plt.show()
+
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        if sys.argv[1] == '--relevance':
+            print('Analyze pixel relevance')
+            analyzePixelRelevance()
+        elif sys.argv[1] == '--invariance':
+            print('Analyze translation invariance')
+            analyzeTranslationInvariance()
+    else:
+        print('Show results')
+        showResults()
+
+
